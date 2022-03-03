@@ -25,9 +25,9 @@ func main() {
 
 	// parse args
 	var url = flag.String("u", "", "URL")
-	var period = flag.Int("p", 0, "Repeat time period. (Default is onetime)")
-	var maxRepeat = flag.Int("m", 0, "Maximum number of repeats. (Default is onetime)")
-	var onBackGround = flag.Bool("b", true, "Run command at background. (Default is True)")
+	var period = flag.Int("p", 0, "Repeat time period.")
+	var maxRepeat = flag.Int("m", 1, "Maximum number of repeats.")
+	var onBackGround = flag.Int("b", 1, "Run command at background.")
 	flag.Parse()
 
 	var reqCount = 1
@@ -40,18 +40,18 @@ func main() {
 	for true {
 		body := httpGet(*url)
 		if body != nil {
-			//log.Printf("█ Content:\n")
-			//log.Printf("[%s]\n", body)
-			//runCmd(" tail -5 /etc/os-release; echo sleeping; sleep 3, date", *onBackGround)
 			runCmd(string(body), *onBackGround)
 		}
 
-		if *period == 0 || reqCount == *maxRepeat {
+		if *period <= 1 || *maxRepeat == reqCount {
 			break
 		}
 
 		time.Sleep(time.Duration(*period) * time.Second)
-		reqCount++
+
+		if *maxRepeat != 0 {
+			reqCount++
+		}
 	}
 }
 
@@ -81,7 +81,7 @@ func httpGet(url string) []byte {
 	return body
 }
 
-func runCmd(input string, onBackGround bool) {
+func runCmd(input string, onBackGround int) {
 
 	commands := strings.Split(input, ";")
 
@@ -96,7 +96,7 @@ func runCmd(input string, onBackGround bool) {
 			return
 		}
 
-		if onBackGround {
+		if onBackGround == 1 {
 			log.Printf("Running command [%s] at background", cmd)
 			err := exec.Command(bin, args...).Start()
 			if err != nil {
